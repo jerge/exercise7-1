@@ -7,69 +7,73 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-public class PolygonModel extends JComponent {
-  private List<IDrawablePolygon> polygons = new ArrayList<>();
+public class PolygonModel extends JComponent implements Runnable {
+    private List<IDrawablePolygon> polygons = new ArrayList<>();
 
-  private boolean direction = true;
-  private int ticker = 0;
-  private boolean stop = false;
+    private boolean direction = true;
+    private int ticker = 0;
+    private boolean stop = false;
 
-  public void addPolygon(IDrawablePolygon p) {
-    System.out.println("Adding a polygon.");
-    polygons.add(p);
-  }
-
-  public void removePolygon() {
-    if (!polygons.isEmpty()) {
-      System.out.println("Removing a polygon.");
-      polygons.remove(0);
-    } else {
-      JOptionPane.showMessageDialog(this, "This is very bad!");
+    public synchronized void addPolygon( IDrawablePolygon p ) {
+        System.out.println( "Adding a polygon." );
+        polygons.add( p );
     }
-  }
 
-  public void paint(Graphics g) {
-    for (IDrawablePolygon polygon : polygons) {
-      polygon.paint(g);
+    public synchronized void removePolygon() {
+        if ( !polygons.isEmpty() ) {
+            System.out.println( "Removing a polygon." );
+            polygons.remove( 0 );
+        } else {
+            JOptionPane.showMessageDialog( this, "This is very bad!" );
+        }
     }
-  }
 
-  private void translate(int x, int y) {
-    for (IDrawablePolygon p : polygons) {
-      p.translate(x, y);
+    public void paint( Graphics g ) {
+        for ( IDrawablePolygon polygon : polygons ) {
+            polygon.paint( g );
+        }
     }
-  }
 
-  private void update() {
-    ticker++;
-    int value = direction ? 10 : -10;
-    translate(value, value);
-    notifyListeners();
-    if (ticker > 10) {
-      direction = !direction;
-      ticker = 0;
+    private void translate( int x, int y ) {
+        for ( IDrawablePolygon p : polygons ) {
+            p.translate( x, y );
+        }
     }
-  }
 
-  private void notifyListeners() {
-    for (AnimateListener l : listeners)
-      l.actOnUpdate();
-  }
-
-  public void animate() {
-    try {
-      while (!stop) {
-        Thread.sleep(500);
-        update();
-      }
-    } catch (InterruptedException e) {
+    private synchronized void update() {
+        ticker++;
+        int value = direction ? 10 : -10;
+        translate( value, value );
+        notifyListeners();
+        if ( ticker > 10 ) {
+            direction = !direction;
+            ticker = 0;
+        }
     }
-  }
 
-  private List<AnimateListener> listeners = new ArrayList<>();
+    private void notifyListeners() {
+        for ( AnimateListener l : listeners )
+            l.actOnUpdate();
+    }
 
-  public void addListener(AnimateListener l) {
-    listeners.add(l);
-  }
+    public void run() {
+        animate();
+    }
+
+    private void animate() {
+        try {
+            while ( !stop ) {
+                Thread.sleep( 500 );
+                update();
+            }
+        } catch ( InterruptedException e ) {
+        }
+    }
+
+    private List<AnimateListener> listeners = new ArrayList<>();
+
+    public void addListener( AnimateListener l ) {
+        listeners.add( l );
+    }
 }
 
